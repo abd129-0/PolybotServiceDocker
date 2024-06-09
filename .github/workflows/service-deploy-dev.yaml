@@ -34,7 +34,7 @@ jobs:
 
       - name: Build and push image
         run: |
-          cd yolo5
+          cd yolov5
           docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
 
           IMAGE_NAME=yolov5:${{ github.run_number }}
