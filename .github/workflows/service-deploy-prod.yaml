@@ -3,7 +3,7 @@ name: Polybot Service Deployment Dev
 on:
   push:
     branches:
-      - dev
+      - main
 
 env:
   BOT_INSTANCE_DOMAIN: image-detect.abdullahfursa.click  # TODO replace to your bot domain
@@ -69,7 +69,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
-            # You deployment script here...
+            # You deployment script here....
             
             cd PolybotService/
             
