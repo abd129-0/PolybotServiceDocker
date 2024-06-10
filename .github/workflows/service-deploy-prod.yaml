@@ -1,12 +1,12 @@
-name: Polybot Service Deployment Prod
+name: Polybot Service Deployment Dev
 
 on:
   push:
     branches:
-      - main
+      - dev
 
 env:
-  BOT_INSTANCE_DOMAIN: prod.mydomain.click  # TODO replace to your bot domain
+  BOT_INSTANCE_DOMAIN: image-detect.abdullahfursa.click  # TODO replace to your bot domain
 
 jobs:
   PolybotBuild:
@@ -18,12 +18,13 @@ jobs:
       - name: Build and push image
         run: |
           cd polybot
-          
+
           docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
 
           IMAGE_NAME=polybot:${{ github.run_number }}
           docker build -t $IMAGE_NAME .
-          docker push $IMAGE_NAME
+          docker tag $IMAGE_NAME ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME
 
   Yolo5Build:
     runs-on: ubuntu-latest
@@ -34,12 +35,12 @@ jobs:
       - name: Build and push image
         run: |
           cd yolo5
-   
           docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_PASSWORD }}
 
-          IMAGE_NAME=yolo5:${{ github.run_number }}
+          IMAGE_NAME=yolov5:${{ github.run_number }}
           docker build -t $IMAGE_NAME .
-          docker push $IMAGE_NAME
+          docker tag $IMAGE_NAME ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME
 
   Deploy:
     name: Deploy Docker compose project
@@ -69,7 +70,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             # You deployment script here...
-                     
+            
             cd PolybotService/
             
             # Save telegram bot token in a secret file, to be used in docker-compose.yaml
@@ -77,9 +78,12 @@ jobs:
             
             # Generate .env file
             echo """
-            POLYBOT_IMG_NAME=polybot:${{ github.run_number }}
-            YOLO5_IMG_NAME=yolo5:${{ github.run_number }}
-            TELEGRAM_APP_URL=$BOT_INSTANCE_DOMAIN
+            POLYBOT_IMG_NAME=${{ secrets.DOCKERHUB_USERNAME }}/polybot:${{ github.run_number }}
+            YOLO5_IMG_NAME=${{ secrets.DOCKERHUB_USERNAME }}/yolo5:${{ github.run_number }}
+            TELEGRAM_APP_URL=${{ env.BOT_INSTANCE_DOMAIN }}:8443
+            TELEGRAM_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            BUCKET_NAME=${{ secrets.BUCKET_NAME }}
+          
             """ > .env
             
             # Take the service down
@@ -87,3 +91,5 @@ jobs:
             
             # Take it up with the current updated values
             docker compose up -d
+            sleep 15
+            /bin/bash /home/ubuntu/init_replica
