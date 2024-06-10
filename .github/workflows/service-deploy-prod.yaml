@@ -3,7 +3,7 @@ name: Polybot Service Deployment Dev
 on:
   push:
     branches:
-      - dev
+      - main
 
 env:
   BOT_INSTANCE_DOMAIN: image-detect.abdullahfursa.click  # TODO replace to your bot domain
