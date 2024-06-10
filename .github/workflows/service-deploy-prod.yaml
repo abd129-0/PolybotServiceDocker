@@ -92,4 +92,7 @@ jobs:
             # Take it up with the current updated values
             docker compose up -d
             sleep 15
-            /bin/bash /home/ubuntu/init_replica
+            docker exec mongo1 mongosh --eval 'rs.status()' | grep -q '"ok" : 0'
+            if [ $? -eq 0 ]; then
+              docker exec mongo1 mongosh --eval 'rs.initiate({_id: "myReplicaSet", members: [{_id: 0, host: "mongo1"}, {_id: 1, host: "mongo2"}, {_id: 2, host: "mongo3"}]})'
+            fi
